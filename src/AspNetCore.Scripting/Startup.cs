@@ -9,11 +9,8 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.DotNet.InternalAbstractions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyModel;
-using Microsoft.Extensions.Logging;
 
 namespace AspNetCore.Scripting
 {
@@ -43,15 +40,8 @@ namespace AspNetCore.Scripting
         private readonly ScriptingHost _scriptHost = new ScriptingHost();
         private Script<object> _script;
 
-        public Startup(IHostingEnvironment env)
+        public Startup()
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
-
             var code = File.ReadAllText(ScriptFullPath);
 
             var opts = ScriptOptions.Default.
@@ -73,13 +63,9 @@ namespace AspNetCore.Scripting
             _scriptResult = _script.RunAsync(_scriptHost).Result;
         }
 
-        public IConfigurationRoot Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-
+            var scriptAssembly = _scriptResult.GetScriptAssembly();
             var manager = new ApplicationPartManager();
             manager.ApplicationParts.Add(new AssemblyPart(scriptAssembly));
             manager.FeatureProviders.Add(new ScriptControllerFeatureProvider());
@@ -89,24 +75,9 @@ namespace AspNetCore.Scripting
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            _scriptHost.ConfigureApp?.Invoke(app, env, loggerFactory);
-        }
-    }
-
-    public static class ScriptStateExtensions
-    {
-        public static Assembly GetScriptAssembly(this ScriptState<object> scriptState)
-        {
-            var executionStateProperty = scriptState.GetType().GetProperty("ExecutionState", BindingFlags.NonPublic | BindingFlags.Instance);
-            var executionState = executionStateProperty.GetValue(scriptState);
-
-            var submissionStatesField = executionState.GetType().GetField("_submissionStates", BindingFlags.NonPublic | BindingFlags.Instance);
-            var submissions = submissionStatesField.GetValue(executionState) as object[];
-
-            var scriptAssembly = submissions[1].GetType().GetTypeInfo().Assembly;
-            return scriptAssembly;
+            _scriptHost.ConfigureApp?.Invoke(app, env);
         }
     }
 }

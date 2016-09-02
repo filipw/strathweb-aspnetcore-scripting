@@ -2,21 +2,20 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace AspNetCore.Scripting
 {
     public class ScriptingHost
     {
         internal Func<IServiceCollection, IMvcBuilder> ConfigureServices;
-        internal Action<IApplicationBuilder, IHostingEnvironment, ILoggerFactory> ConfigureApp;
+        internal Action<IApplicationBuilder, IHostingEnvironment> ConfigureApp;
 
         public void Services(Func<IServiceCollection, IMvcBuilder> configureServices)
         {
             ConfigureServices = configureServices;
         }
 
-        public void Configure(Action<IApplicationBuilder, IHostingEnvironment, ILoggerFactory> configureApp)
+        public void Configure(Action<IApplicationBuilder, IHostingEnvironment> configureApp)
         {
             ConfigureApp = configureApp;
         }

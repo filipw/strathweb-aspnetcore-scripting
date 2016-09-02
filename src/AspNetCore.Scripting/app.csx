@@ -12,4 +12,4 @@ public class ValuesController : Controller
 }
 
 Services(s => s.AddMvc());
-Configure((app, env, log) => app.UseMvc());
+Configure((app, env) => app.UseMvc());
