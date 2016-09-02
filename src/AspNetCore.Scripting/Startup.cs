@@ -78,13 +78,7 @@ namespace AspNetCore.Scripting
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var executionStateProperty = _scriptResult.GetType().GetProperty("ExecutionState", BindingFlags.NonPublic | BindingFlags.Instance);
-            var executionState = executionStateProperty.GetValue(_scriptResult);
 
-            var submissionStatesField = executionState.GetType().GetField("_submissionStates", BindingFlags.NonPublic | BindingFlags.Instance);
-            var submissions = submissionStatesField.GetValue(executionState) as object[];
-
-            var scriptAssembly = submissions[1].GetType().GetTypeInfo().Assembly;
 
             var manager = new ApplicationPartManager();
             manager.ApplicationParts.Add(new AssemblyPart(scriptAssembly));
@@ -98,6 +92,21 @@ namespace AspNetCore.Scripting
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             _scriptHost.ConfigureApp?.Invoke(app, env, loggerFactory);
+        }
+    }
+
+    public static class ScriptStateExtensions
+    {
+        public static Assembly GetScriptAssembly(this ScriptState<object> scriptState)
+        {
+            var executionStateProperty = scriptState.GetType().GetProperty("ExecutionState", BindingFlags.NonPublic | BindingFlags.Instance);
+            var executionState = executionStateProperty.GetValue(scriptState);
+
+            var submissionStatesField = executionState.GetType().GetField("_submissionStates", BindingFlags.NonPublic | BindingFlags.Instance);
+            var submissions = submissionStatesField.GetValue(executionState) as object[];
+
+            var scriptAssembly = submissions[1].GetType().GetTypeInfo().Assembly;
+            return scriptAssembly;
         }
     }
 }
